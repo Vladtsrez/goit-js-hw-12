@@ -4,25 +4,28 @@ import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import axios from 'axios';
 
 const loader = document.querySelector('.loader');
 const form = document.getElementById('searchForm');
 const galleryElement = document.querySelector('.gallery');
-
+const loadMoreButton = document.querySelector('.load-more');
+const endMessage = "We're sorry, but you've reached the end of search results.";
+let currentPage = 1;
+let searchQuery = '';
+let totalHits = 0;
+let cardHeight = 0;
 let lightbox;
 
-function toggleLoader(display) {
-  loader.style.display = display;
-}
-
 loader.style.display = 'none';
+loadMoreButton.style.display = 'none';
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
 
-  const input = document.getElementById('searchInput').value.trim();
+  searchQuery = document.getElementById('searchInput').value.trim();
 
-  if (input === '') {
+  if (searchQuery === '') {
     iziToast.warning({
       title: 'Caution',
       message: 'Please enter a search query.',
@@ -30,25 +33,43 @@ form.addEventListener('submit', async e => {
     return;
   }
 
-  toggleLoader('block');
+  currentPage = 1;
+  toggleLoader(true);
+  await performSearch();
+});
 
+loadMoreButton.addEventListener('click', async () => {
+  currentPage++;
+  toggleLoader(true);
+  await performSearch();
+  smoothScroll();
+});
+
+async function performSearch() {
   try {
-    const images = await searchImages(input);
-    galleryElement.innerHTML = '';
-
-    if (images.length === 0) {
+    const { hits, total } = await searchImages(searchQuery, currentPage);
+    if (hits.length === 0) {
       iziToast.warning({
         title: 'Caution',
-        message:
-          'Sorry, there are no images matching your search query. Please try again!',
+        message: 'Sorry, there are no more images matching your search query.',
       });
     } else {
-      images.forEach(image => {
+      if (currentPage === 1) {
+        galleryElement.innerHTML = '';
+        totalHits = total;
+        loadMoreButton.style.display = 'none';
+      }
+      hits.forEach(image => {
         addImageCard(image);
       });
-
+      if (galleryElement.querySelectorAll('.gallery-item').length < totalHits) {
+        loadMoreButton.style.display = 'block';
+      } else {
+        loadMoreButton.style.display = 'none';
+        iziToast.info({ message: endMessage });
+      }
       if (!lightbox) {
-        const lightbox = new SimpleLightbox('.gallery-link', {
+        lightbox = new SimpleLightbox('.gallery-link', {
           captions: true,
           captionsData: 'alt',
           captionDelay: 250,
@@ -60,109 +81,24 @@ form.addEventListener('submit', async e => {
   } catch (error) {
     console.error('Error', error);
   } finally {
-    toggleLoader('none');
+    toggleLoader(false);
   }
-});
-//
+}
 
-//import './js/pixabay-api';
+function toggleLoader(show) {
+  loader.style.display = show ? 'block' : 'none';
+}
 
-//// Описаний у документації
-//import iziToast from 'izitoast';
-//// Додатковий імпорт стилів
-//import 'izitoast/dist/css/iziToast.min.css';
-
-//import SimpleLightbox from 'simplelightbox';
-//// Додатковий імпорт стилів
-//import 'simplelightbox/dist/simple-lightbox.min.css';
-
-//const loader = document.querySelector('.loader');
-//loader.style.display = 'block';
-
-//const form = document
-//  .getElementById('searchForm')
-//  .addEventListener('submit', e => {
-//    e.preventDefault();
-
-//    const input = document.getElementById('searchInput').value.trim();
-
-//    if (input === '') {
-//      iziToast.warning({
-//        title: 'Caution',
-//        message: 'Please enter a search query.',
-//      });
-//      return;
-//    }
-
-//    const apiKey = '43518191-3e4362bb1fc47484118bdfa22';
-//    const url =
-//      'https://pixabay.com/api/?key=' +
-//      apiKey +
-//      '&q=' +
-//      encodeURIComponent(input) +
-//      '&image_type=photo&orientation=horizontal&safesearch=true';
-
-//    const loader = document.querySelector('.loader');
-//    loader.style.display = 'block';
-
-//    fetch(url)
-//      .then(response => response.json())
-//      .then(data => {
-//        loader.style.display = 'none';
-
-//        if (data.hits.length === 0) {
-//          iziToast.warning({
-//            title: 'Caution',
-//            message:
-//              'Sorry, there are no images matching your search query. Please try again!',
-//          });
-//        } else {
-//          const galleryElement = document.querySelector('.gallery');
-//          galleryElement.innerHTML = '';
-
-//          data.hits.forEach(hit => {
-//            addImageCard(hit);
-//          });
-
-//          lightbox.refresh();
-//        }
-//      })
-//      .catch(error => {
-//        console.error('Error', error);
-//      });
-//  });
-
-//function addImageCard(image) {
-//  const galleryList = document.querySelector('ul.gallery');
-
-//  const galleryItem = document.createElement('li');
-//  galleryItem.classList.add('gallery-item');
-
-//  const galleryLink = document.createElement('a');
-//  galleryLink.classList.add('gallery-link');
-//  galleryLink.href = image.largeImageURL;
-
-//  const galleryImage = document.createElement('img');
-//  galleryImage.src = image.webformatURL;
-//  galleryImage.alt = image.tags;
-
-//  const imageInfo = document.createElement('div');
-//  imageInfo.classList.add('image-info');
-//  imageInfo.innerHTML = `
-//      <p>Likes: ${image.likes}</p>
-//      <p>Views: ${image.views}</p>
-//      <p>Comments: ${image.comments}</p>
-//      <p>Downloads: ${image.downloads}</p>
-//  `;
-
-//  galleryLink.appendChild(galleryImage);
-//  galleryLink.appendChild(imageInfo);
-//  galleryItem.appendChild(galleryLink);
-//  galleryList.appendChild(galleryItem);
-//}
-
-//const lightbox = new SimpleLightbox('.gallery-link', {
-//  captions: true,
-//  captionsData: 'alt',
-//  captionDelay: 250,
-//});
+function smoothScroll() {
+  if (currentPage > 1) {
+    if (cardHeight === 0) {
+      const firstCard = document.querySelector('.gallery-item');
+      const rect = firstCard.getBoundingClientRect();
+      cardHeight = rect.height;
+    }
+    window.scrollBy({
+      top: cardHeight * 3,
+      behavior: 'smooth',
+    });
+  }
+}
