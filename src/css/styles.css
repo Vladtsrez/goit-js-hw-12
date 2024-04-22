@@ -1,0 +1,53 @@
+/**
+  |============================
+  | include css partials with
+  | default @import url()
+  |============================
+*/
+@import url('./reset.css');
+@import url('./pixabay.css');
+
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #242424;
+  background-color: rgba(255, 255, 255, 0.87);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+.loader {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  /* Колір рамки */
+  border-left-color: #3498db;
+  /* Колір індикатора */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  /* Анімація обертання */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -25px;
+  /* Половина висоти */
+  margin-left: -25px;
+  /* Половина ширини */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
