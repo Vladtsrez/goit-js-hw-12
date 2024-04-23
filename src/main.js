@@ -53,6 +53,9 @@ async function performSearch() {
         title: 'Caution',
         message: 'Sorry, there are no more images matching your search query.',
       });
+
+      galleryElement.innerHTML = '';
+      loadMoreButton.style.display = 'none';
     } else {
       if (currentPage === 1) {
         galleryElement.innerHTML = '';
